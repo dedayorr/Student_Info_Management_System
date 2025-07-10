@@ -7,15 +7,15 @@ import {
   Heading, 
   Button, 
   useDisclosure,
-  Grid,
   Spinner,
   Center,
   Text,
   Flex
 } from '@chakra-ui/react';
 import { useToast } from "@chakra-ui/toast";
-import StudentCard from "@/components/ui/StudentCard"
+import StudentList from "@/components/ui/StudentList"
 import StudentForm from '@/components/ui/StudentForm';
+import StudentDetailModal from '@/components/ui/StudentDetailsModal';
 import SearchFilter from '@/components/ui/SearchFilter';
 
 
@@ -36,8 +36,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
   const toast = useToast();
 
   // Fetch all students
@@ -127,6 +129,7 @@ export default function Home() {
         });
         
         fetchStudents(); // Refresh the list
+        onDetailClose(); // Close detail modal if open
       } else {
         toast({
           title: 'Error',
@@ -148,9 +151,16 @@ export default function Home() {
     }
   };
 
+  // To view student details
+  const handleViewStudent = (student: Student) => {
+    setSelectedStudent(student);
+    onDetailOpen();
+  };
+
   // To edit student
   const handleEditStudent = (student: Student) => {
     setEditingStudent(student);
+    onDetailClose(); // Close detail modal
     onOpen();
   };
 
@@ -232,7 +242,7 @@ export default function Home() {
   }
 
   return (
-    <Container maxW="container" py={8}>
+    <Container maxW="container.xl" py={8}>
       <Box mb={8}>
         <Heading as="h1" size="xl" mb={4} textAlign="center" fontWeight={900}>
           Student Management System
@@ -291,20 +301,10 @@ export default function Home() {
           </Box>
         </Center>
       ) : (
-        <Grid
-          templateColumns="repeat(auto-fill, minmax(300px, 1fr))"
-          gap={6}
-          mb={8}
-        >
-          {filteredStudents.map((student) => (
-            <StudentCard
-              key={student.id}
-              student={student}
-              onEdit={handleEditStudent}
-              onDelete={handleDeleteStudent}
-            />
-          ))}
-        </Grid>
+        <StudentList
+          students={filteredStudents}
+          onViewStudent={handleViewStudent}
+        />
       )}
 
       {/* Student Form Modal */}
@@ -313,6 +313,15 @@ export default function Home() {
         onClose={handleCloseForm}
         onSubmit={handleStudentSubmit}
         editingStudent={editingStudent}
+      />
+
+      {/* Student Detail Modal */}
+      <StudentDetailModal
+        isOpen={isDetailOpen}
+        onClose={onDetailClose}
+        student={selectedStudent}
+        onEdit={handleEditStudent}
+        onDelete={handleDeleteStudent}
       />
     </Container>
   );
