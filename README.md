@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+STUDENT INFORMATION SYSTEM
 
-## Getting Started
+A web application built with Next.js and Typescript for managing student information. It includes students records, search functionality and data managment.
 
-First, run the development server:
+FEATURES
+- Add, edit, delete student records
+- Search and Filter
+- Chakra UI for the design
+- In-memory database for backend, JSON-based data storage
+- Typescript
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+To run the project have your Node.js installed, npm or yarn package manager and git for version control
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+To Install,
+- Clone the respository (git clone <repository-url>)
+- npm install or yarn install
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To run the app,
+- npm run dev or yarn dev
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+PROJECT STRUCTURE
 
-To learn more about Next.js, take a look at the following resources:
+STUDENT-INFO-SYSTEM 
+>> data
+    - students.json (student data storage)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+>> Src
+    - app
+        -- api (routes for student operation)
+            --- students
+                ----> routes.ts
+            --- [id]
+                ----> route.ts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+        -- layout.tsx (styles)
 
-## Deploy on Vercel
+        -- page.tsx (individual student cards/page)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    - components
+        -- providers
+            ---> AppChakraProvider.tsx (chakra)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+        -- ui 
+            ---> SearchFilter.tsx (student filter component)
+            ---> StudentCard.tsx (student card component)
+            ---> StudentForm.tsx (student form component)
+
+    - next.config.js
+    - package.json
+    - tsconfig.json
+
+
+API ENDPOINTS
+>>> GET /api/students - to retrieve all students
+
+>>> POST /api/students - to create a new student
+
+>>> GET /api/students/[id] - to get student by ID
+
+>>> PUT /api/students/[id] - to update student by ID
+
+>>> DELETE /api/students/[id] - to delete student by ID
+
+
+STUDENT DATA STRUCTURE
+interface student {
+    id: number;
+  name: string;
+  registrationNumber: string;
+  major: string;
+  dateOfBirth: string;
+  gpa: number;
+  createdAt: string;
+  updatedAt: string;
+}
+

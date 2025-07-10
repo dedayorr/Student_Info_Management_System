@@ -1,103 +1,317 @@
-import Image from "next/image";
+"use client"
+
+import { useState, useEffect } from 'react';
+import { 
+  Box, 
+  Container, 
+  Heading, 
+  Button, 
+  useDisclosure,
+  Grid,
+  Spinner,
+  Center,
+  Text,
+  Flex
+} from '@chakra-ui/react';
+import { useToast } from "@chakra-ui/toast";
+import StudentCard from "@/components/ui/StudentCard"
+import StudentForm from '@/components/ui/StudentForm';
+import SearchFilter from '@/components/ui/SearchFilter';
+
+
+interface Student {
+  id: number;
+  name: string;
+  registrationNumber: string;
+  major: string;
+  dateOfBirth: string;
+  gpa: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const toast = useToast();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  // Fetch all students
+  const fetchStudents = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/students');
+      const data = await response.json();
+      
+      if (data.success) {
+        setStudents(data.data);
+        setFilteredStudents(data.data);
+        setError(null);
+      } else {
+        setError(data.message || 'Failed to fetch students');
+      }
+    } catch (err) {
+      setError('Network error occurred');
+      console.error('Error fetching students:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  //To create and update
+  const handleStudentSubmit = async (studentData: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const url = editingStudent ? `/api/students/${editingStudent.id}` : '/api/students';
+      const method = editingStudent ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(studentData),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: editingStudent ? 'Student updated successfully' : 'Student created successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        
+        fetchStudents(); // Refresh the list
+        handleCloseForm();
+      } else {
+        toast({
+          title: 'Error',
+          description: data.message || 'Failed to save student',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Network error occurred',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  // To delete student 
+  const handleDeleteStudent = async (id: number) => {
+    try {
+      const response = await fetch(`/api/students/${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: 'Student deleted successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        
+        fetchStudents(); // Refresh the list
+      } else {
+        toast({
+          title: 'Error',
+          description: data.message || 'Failed to delete student',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Network error occurred',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  // To edit student
+  const handleEditStudent = (student: Student) => {
+    setEditingStudent(student);
+    onOpen();
+  };
+
+  // To close form
+  const handleCloseForm = () => {
+    setEditingStudent(null);
+    onClose();
+  };
+
+  // To search and filter
+  const handleSearch = (searchTerm: string, majorFilter: string) => {
+    let filtered = students;
+
+    if (searchTerm) {
+      filtered = filtered.filter(student =>
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (majorFilter) {
+      filtered = filtered.filter(student =>
+        student.major.toLowerCase().includes(majorFilter.toLowerCase())
+      );
+    }
+
+    setFilteredStudents(filtered);
+  };
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  if (loading) {
+    return (
+      <Container maxW="container.xl" py={8}>
+        <Center h="50vh">
+          <Spinner size="xl" color="blue.500" />
+        </Center>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxW="container.xl" py={8}>
+        <Box
+          bg="red.50"
+          border="1px"
+          borderColor="red.200"
+          borderRadius="md"
+          p={4}
+        >
+          <Flex align="center">
+            <Box
+              w={5}
+              h={5}
+              bg="red.500"
+              borderRadius="full"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              mr={3}
+            >
+              <Text color="white" fontSize="sm" fontWeight="bold">!</Text>
+            </Box>
+            <Box>
+              <Text fontWeight="bold" color="red.800">
+                Error!
+              </Text>
+              <Text color="red.700">
+                {error}
+              </Text>
+            </Box>
+          </Flex>
+        </Box>
+      </Container>
+    );
+  }
+
+  return (
+    <Container maxW="container" py={8}>
+      <Box mb={8}>
+        <Heading as="h1" size="xl" mb={4} textAlign="center" fontWeight={900}>
+          Student Management System
+        </Heading>
+        
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={6}>
+          <SearchFilter onSearch={handleSearch} />
+          
+          <Button
+            colorScheme="purple"
+            onClick={onOpen}
+            size="md"
+            ml={5}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+            <Text mr={2} fontSize="lg">+</Text>
+            Add New Student
+          </Button>
+        </Box>
+      </Box>
+
+      {filteredStudents.length === 0 ? (
+        <Center py={12}>
+          <Box
+            bg="blue.50"
+            border="1px"
+            borderColor="blue.200"
+            borderRadius="md"
+            p={6}
+            maxW="md"
+          >
+            <Flex align="center">
+              <Box
+                w={5}
+                h={5}
+                bg="blue.500"
+                borderRadius="full"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                mr={3}
+              >
+                <Text color="white" fontSize="sm" fontWeight="bold">i</Text>
+              </Box>
+              <Box>
+                <Text fontWeight="bold" color="blue.800">
+                  No students found!
+                </Text>
+                <Text color="blue.700">
+                  {students.length === 0 
+                    ? "Start by adding your first student."
+                    : "Try adjusting your search criteria."
+                  }
+                </Text>
+              </Box>
+            </Flex>
+          </Box>
+        </Center>
+      ) : (
+        <Grid
+          templateColumns="repeat(auto-fill, minmax(300px, 1fr))"
+          gap={6}
+          mb={8}
+        >
+          {filteredStudents.map((student) => (
+            <StudentCard
+              key={student.id}
+              student={student}
+              onEdit={handleEditStudent}
+              onDelete={handleDeleteStudent}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          ))}
+        </Grid>
+      )}
+
+      {/* Student Form Modal */}
+      <StudentForm
+        isOpen={isOpen}
+        onClose={handleCloseForm}
+        onSubmit={handleStudentSubmit}
+        editingStudent={editingStudent}
+      />
+    </Container>
   );
 }
