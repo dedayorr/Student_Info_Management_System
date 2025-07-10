@@ -55,9 +55,9 @@ import {
       return age;
     };
   
-    const getInitials = (name: string) => {
-      return name.split(' ').map(n => n[0]).join('').toUpperCase();
-    };
+    // const getInitials = (name: string) => {
+    //   return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    // };
   
     return (
       <Box
