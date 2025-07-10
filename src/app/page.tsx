@@ -98,6 +98,7 @@ export default function Home() {
         });
       }
     } catch (err) {
+      console.error('Error saving student:', err);
       toast({
         title: 'Error',
         description: 'Network error occurred',
@@ -136,6 +137,7 @@ export default function Home() {
         });
       }
     } catch (err) {
+      console.error('Error deleting student:', err);
       toast({
         title: 'Error',
         description: 'Network error occurred',

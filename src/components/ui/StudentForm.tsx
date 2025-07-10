@@ -133,6 +133,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
     try {
       await onSubmit(formData);
     } catch (error) {
+      console.error("Error saving student:", error);
       toast({
         title: "Error",
         description: "Failed to save student",

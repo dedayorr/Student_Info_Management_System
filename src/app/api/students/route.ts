@@ -2,9 +2,27 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
+interface Student {
+  id: number;
+  name: string;
+  registrationNumber: string;
+  major: string;
+  dateOfBirth: string;
+  gpa: number;
+  createdAt: string;
+  updatedAt: string;
+}
+interface CreateStudentRequest {
+  name: string;
+  registrationNumber: string;
+  major: string;
+  dateOfBirth: string;
+  gpa: number | string;
+}
+
 const dbFilePath = path.join(process.cwd(), "data", "students.json");
 
-function readStudentsFromFile() {
+function readStudentsFromFile(): Student[] {
   try {
     // Creates data directory if it doesn't exist
     const dataDir = path.dirname(dbFilePath);
@@ -14,7 +32,7 @@ function readStudentsFromFile() {
 
     // Creates file with initial data if it doesn't exist
     if (!fs.existsSync(dbFilePath)) {
-      const initialData = [
+      const initialData: Student[] = [
         {
           id: 1,
           name: "Faith Adegoke",
@@ -50,14 +68,14 @@ function readStudentsFromFile() {
     }
 
     const data = fs.readFileSync(dbFilePath, "utf8");
-    return JSON.parse(data);
+    return JSON.parse(data) as Student[];
   } catch (error) {
     console.error("Error reading students file:", error);
     return [];
   }
 }
 
-function writeStudentsToFile(students: any) {
+function writeStudentsToFile(students: Student[]): void {
   try {
     fs.writeFileSync(dbFilePath, JSON.stringify(students, null, 2));
   } catch (error) {
@@ -75,6 +93,7 @@ export async function GET() {
       message: "Students retrieved successfully",
     });
   } catch (error) {
+    console.error("Error retrieving students:", error);
     return NextResponse.json(
       {
         success: false,
@@ -86,9 +105,9 @@ export async function GET() {
 }
 
 //   To create new student
-export async function POST(request: { json: () => any }) {
+export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json() as CreateStudentRequest;
     const { name, registrationNumber, major, dateOfBirth, gpa } = body;
 
     if (
@@ -112,17 +131,17 @@ export async function POST(request: { json: () => any }) {
 
     const newId =
       students.length > 0
-        ? Math.max(...students.map((s: { id: any }) => s.id)) + 1
+        ? Math.max(...students.map((s: Student) => s.id)) + 1
         : 1;
 
     // Create new student
-    const newStudent = {
+    const newStudent: Student = {
       id: newId,
       name,
       registrationNumber,
       major,
       dateOfBirth,
-      gpa: parseFloat(gpa),
+      gpa: parseFloat(gpa.toString()),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -142,6 +161,7 @@ export async function POST(request: { json: () => any }) {
       { status: 201 }
     );
   } catch (error) {
+    console.error("Error creating student:", error);
     return NextResponse.json(
       {
         success: false,
