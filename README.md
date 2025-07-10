@@ -44,7 +44,9 @@ STUDENT-INFO-SYSTEM
         -- ui 
             ---> SearchFilter.tsx (student filter component)
             ---> StudentCard.tsx (student card component)
+            ---> StudentDetailsModal.tsx (student details component)
             ---> StudentForm.tsx (student form component)
+            ---> StudentList.tsx (list of students component)
 
     - next.config.js
     - package.json
